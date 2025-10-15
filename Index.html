@@ -1,166 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nano AI Chat v6</title>
-<style>
-  body {
-    font-family: "Poppins", sans-serif;
-    background: linear-gradient(135deg, #0e0e10, #1a1a1d);
-    color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    margin: 0;
-  }
-  header {
-    background: #121213;
-    padding: 12px;
-    text-align: center;
-    font-size: 1.2em;
-    letter-spacing: 0.5px;
-    color: #00ffcc;
-    border-bottom: 1px solid #222;
-  }
-  #chatbox {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    scroll-behavior: smooth;
-  }
-  .msg {
-    padding: 10px 14px;
-    border-radius: 16px;
-    max-width: 80%;
-    word-wrap: break-word;
-  }
-  .user {
-    align-self: flex-end;
-    background: #00ffc8;
-    color: #000;
-  }
-  .ai {
-    align-self: flex-start;
-    background: #1e1e24;
-    border: 1px solid #333;
-  }
-  #input-area {
-    display: flex;
-    border-top: 1px solid #333;
-    background: #111;
-  }
-  input, button {
-    font-size: 1em;
-  }
-  #msg-input {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: #fff;
-  }
-  #send-btn {
-    background: #00ffc8;
-    color: #000;
-    border: none;
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  #send-btn:hover {
-    background: #00e6b4;
-  }
-  #user-id {
-    width: 100%;
-    background: #111;
-    border: none;
-    color: #00ffc8;
-    text-align: center;
-    padding: 8px;
-    font-size: 0.9em;
-  }
-  .typing {
-    font-size: 0.8em;
-    color: #888;
-    align-self: flex-start;
-    font-style: italic;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nano AI Chat</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+    #chatbox {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg {
+      padding: 10px 14px;
+      border-radius: 14px;
+      max-width: 80%;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .user {
+      background: #007bff;
+      align-self: flex-end;
+    }
+    .ai {
+      background: #00c897;
+      align-self: flex-start;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #input-area {
+      display: flex;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 20px;
+      outline: none;
+      font-size: 16px;
+    }
+    button {
+      background: #00c897;
+      color: white;
+      border: none;
+      margin-left: 10px;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <header>🤖 Nano-AI Chat v6.0</header>
-  <input id="user-id" placeholder="Enter your ID (ex: vishnu)" />
   <div id="chatbox"></div>
   <div id="input-area">
-    <input id="msg-input" placeholder="Type your message..." />
-    <button id="send-btn">Send</button>
+    <input id="userInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
   </div>
 
-<script>
-const chatbox = document.getElementById("chatbox");
-const input = document.getElementById("msg-input");
-const sendBtn = document.getElementById("send-btn");
-const userIdInput = document.getElementById("user-id");
+  <script>
+    const API_URL = "https://nano-ai-server.onrender.com/chat";
+    const userId = "user_" + Math.floor(Math.random() * 10000);
 
-const SERVER_URL = "https://nano-ai-server.onrender.com/chat"; // change this to your Render URL
-
-function addMessage(text, sender="ai") {
-  const msg = document.createElement("div");
-  msg.classList.add("msg", sender);
-  msg.textContent = text;
-  chatbox.appendChild(msg);
-  chatbox.scrollTop = chatbox.scrollHeight;
-}
-
-function addTyping() {
-  const t = document.createElement("div");
-  t.classList.add("typing");
-  t.textContent = "Nano-AI is typing...";
-  chatbox.appendChild(t);
-  chatbox.scrollTop = chatbox.scrollHeight;
-  return t;
-}
-
-async function sendMessage() {
-  const user_id = userIdInput.value.trim() || "guest";
-  const text = input.value.trim();
-  if (!text) return;
-
-  addMessage(text, "user");
-  input.value = "";
-
-  const typing = addTyping();
-
-  try {
-    const res = await fetch(SERVER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id, message: text }),
-    });
-    const data = await res.json();
-    typing.remove();
-    if (data.reply) {
-      addMessage(data.reply, "ai");
-    } else if (data.error) {
-      addMessage("⚠️ " + data.error, "ai");
+    function appendMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      document.getElementById("chatbox").appendChild(div);
+      document.getElementById("chatbox").scrollTop = document.getElementById("chatbox").scrollHeight;
     }
-  } catch (e) {
-    typing.remove();
-    addMessage("❌ Connection error", "ai");
-  }
-}
 
-sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
-</script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const message = input.value.trim();
+      if (!message) return;
+      appendMessage("user", message);
+      input.value = "";
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId, message })
+        });
+        const data = await res.json();
+        appendMessage("ai", data.reply || "...");
+      } catch (err) {
+        appendMessage("ai", "⚠️ Server not responding");
+      }
+    }
+
+    // Press Enter to send
+    document.getElementById("userInput").addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
 </body>
 </html>
