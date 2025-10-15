@@ -1,4 +1,4 @@
-# nano_personal_ai_v6.py
+u# nano_personal_ai_v6.py
 # Personalized Nano-AI v6.0
 # Run: pip install fastapi uvicorn python-multipart
 # Start: uvicorn nano_personal_ai_v6:app --host 0.0.0.0 --port 8000
@@ -305,3 +305,9 @@ async def startup_event():
 def shutdown_event():
     # nothing special (brains saved during operations)
     pass
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    with open("index.html", "r") as f:
+        return f.read()
